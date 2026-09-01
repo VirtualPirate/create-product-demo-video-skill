@@ -1,0 +1,7 @@
+# Demo output — every recording is regenerated from the skill, never committed.
+demo/
+out/
+
+node_modules/
+.DS_Store
+*.log

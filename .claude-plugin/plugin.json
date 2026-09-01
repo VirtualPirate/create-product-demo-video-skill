@@ -1,0 +1,29 @@
+{
+  "name": "create-product-demo-video",
+  "version": "1.0.0",
+  "description": "Records a product demo video of a real user flow in whatever web app your repo contains. Claude reads the actual routes, components and design tokens, transcribes them into a self-playing HTML demo, and records it to mp4 (or gif) with Playwright + ffmpeg, optionally over a normalized music bed. Ships four caption styles, a 1280x800 mock-browser skeleton, and a recorder that asserts the audio mux instead of trusting it.",
+  "author": {
+    "name": "VirtualPirate",
+    "url": "https://github.com/VirtualPirate"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/VirtualPirate/create-product-demo-video-skill",
+  "repository": "https://github.com/VirtualPirate/create-product-demo-video-skill",
+  "keywords": [
+    "demo-video",
+    "product-demo",
+    "screencast",
+    "screen-recording",
+    "walkthrough",
+    "playwright",
+    "ffmpeg",
+    "mp4",
+    "gif",
+    "launch-video",
+    "marketing-video",
+    "release-notes",
+    "changelog-video",
+    "ui-capture",
+    "captions"
+  ]
+}

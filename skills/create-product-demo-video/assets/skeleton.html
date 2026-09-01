@@ -1,0 +1,881 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>REPLACE: product — one-line flow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+/* ===========================================================================
+   Design tokens — REPLACE with the app's own. Copy the :root block out of its
+   stylesheet (index.css / globals.css / theme file) so colour, radius and type
+   match exactly; what follows is a neutral placeholder scale, not a house style.
+   The class names further down mirror the utilities a Tailwind/shadcn-shaped
+   app renders, so a screen here can be a 1:1 transcription of its component.
+   =========================================================================== */
+:root {
+  --background: oklch(98.5% 0.004 250);
+  --foreground: oklch(22% 0.02 255);
+  --card: oklch(100% 0 0);
+  --card-foreground: oklch(22% 0.02 255);
+  --primary: oklch(22% 0.02 255);
+  --primary-foreground: oklch(100% 0 0);
+  --muted: oklch(96% 0.004 250);
+  --muted-foreground: oklch(46% 0.015 255);
+  --accent: oklch(95% 0.006 250);
+  --destructive: oklch(55% 0.20 25);
+  --border: oklch(91% 0.006 250);
+  --border-strong: oklch(83% 0.008 250);
+  --input: oklch(88% 0.007 250);
+  --ring: oklch(56% 0.17 255);
+  --brand: oklch(56% 0.17 255);
+  --brand-foreground: oklch(100% 0 0);
+  --sidebar: oklch(97% 0.004 250);
+
+  /* Categorical accents — charts, status dots, tag pills. REPLACE with the
+     app's own scale, one per category it actually renders. */
+  --chart-1: oklch(56% 0.17 255);
+  --chart-2: oklch(55% 0.18 305);
+  --chart-3: oklch(64% 0.14 75);
+  --chart-4: oklch(58% 0.15 145);
+  --chart-5: oklch(56% 0.13 210);
+  --chart-6: oklch(55% 0.02 255);
+
+  --radius: 0.625rem;              /* 10px */
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+  --radius-2xl: 18px;
+
+  --elev-penumbra: oklch(22% 0.02 255 / 0.06);
+  --elev-umbra: oklch(22% 0.02 255 / 0.16);
+  --shadow-e1: 0 1px 2px var(--elev-penumbra), 0 10px 24px -14px var(--elev-umbra);
+  --shadow-e2: 0 2px 5px var(--elev-penumbra), 0 22px 42px -18px var(--elev-umbra);
+
+  --font-sans: 'Hanken Grotesk', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%;
+  font-family: var(--font-sans);
+  color: var(--foreground);
+  background: oklch(96% 0.006 255);
+  -webkit-font-smoothing: antialiased;
+}
+body { display: grid; place-items: center; overflow: hidden; }
+svg { display: block; }
+
+/* ---------------- stage / mock browser ---------------- */
+#stage {
+  position: relative; width: 1280px; height: 800px;
+  background: var(--card); border-radius: 14px; overflow: hidden;
+  box-shadow: 0 40px 80px -30px oklch(22% 0.02 255 / 0.35);
+  transform-origin: center center;
+}
+.browserbar {
+  height: 44px; display: flex; align-items: center; gap: 14px; padding: 0 16px;
+  background: oklch(94.5% 0.005 250); border-bottom: 1px solid var(--border);
+}
+.dots { display: flex; gap: 7px; }
+.dots i { width: 11px; height: 11px; border-radius: 50%; display: block; }
+.dots i:nth-child(1) { background: oklch(72% 0.16 25); }
+.dots i:nth-child(2) { background: oklch(82% 0.14 85); }
+.dots i:nth-child(3) { background: oklch(78% 0.15 145); }
+.urlbar {
+  flex: 1; max-width: 560px; margin: 0 auto; height: 26px; border-radius: 999px;
+  background: var(--card); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  font-family: var(--font-mono); font-size: 11.5px; color: var(--muted-foreground);
+}
+#viewport { position: relative; width: 100%; height: calc(100% - 44px); background: var(--background); overflow: hidden; }
+.scene {
+  position: absolute; inset: 0; opacity: 0; visibility: hidden;
+  transform: translateY(8px); transition: opacity .4s ease, transform .4s ease;
+}
+.scene.on { opacity: 1; visibility: visible; transform: none; }
+
+/* ---------------- app shell ----------------
+   Measurements below are a common default (48px topbar, 240px sidebar,
+   1152px page). Measure the real shell and change them if it differs. */
+.app { display: flex; flex-direction: column; height: 100%; }
+
+/* Topbar — h-12, sticky, border-b, bg-background/80 backdrop-blur */
+.topbar {
+  height: 48px; flex: none; display: flex; align-items: center;
+  justify-content: space-between; padding: 0 16px;
+  border-bottom: 1px solid var(--border); background: oklch(98.5% 0.004 250 / 0.8);
+  backdrop-filter: blur(12px) saturate(1.5);
+}
+.tb-left { display: flex; align-items: center; gap: 12px; }
+.tb-brand { display: flex; align-items: center; gap: 8px; }
+.tb-brand span { font-size: 14px; font-weight: 600; letter-spacing: -0.011em; }
+.brandmark { display: inline-flex; align-items: center; }
+.brandmark svg { height: 16px; width: auto; }
+.card-scene .brandmark svg { height: 46px; }
+.tb-div { height: 16px; width: 1px; background: var(--border); }
+.tb-right { display: flex; align-items: center; gap: 6px; }
+
+.orgav { display: grid; place-items: center; border-radius: var(--radius-lg); font-weight: 700; color: #fff; }
+.role {
+  display: inline-flex; align-items: center; border-radius: 999px;
+  padding: 2px 10px; font-size: 12px; font-weight: 600; text-transform: capitalize;
+  background: oklch(56% 0.17 255 / 0.12); color: var(--brand);
+}
+.avatar-7 {
+  width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
+  background: oklch(56% 0.17 255 / 0.12); color: var(--brand);
+  font-size: 11px; font-weight: 600;
+}
+
+.cmdk svg { width: 14px; height: 14px; flex: none; }
+.cmdk span { white-space: nowrap; }
+.cmdk {
+  flex: none;
+  display: inline-flex; align-items: center; gap: 8px; height: 32px; min-width: 240px;
+  border-radius: 999px; border: 1px solid var(--border); background: oklch(96% 0.004 250 / 0.5);
+  padding: 0 12px; font-size: 12px; color: var(--muted-foreground);
+}
+.cmdk kbd {
+  margin-left: auto; border: 1px solid var(--border); border-radius: var(--radius-md);
+  background: var(--background); padding: 2px 6px;
+  font-family: var(--font-mono); font-size: 10px; color: var(--muted-foreground);
+}
+
+/* Sidebar — w-60, bg-sidebar, border-r, p-3 */
+.body-row { display: flex; flex: 1; overflow: hidden; }
+.sidebar {
+  width: 240px; flex: none; border-right: 1px solid var(--border);
+  background: var(--sidebar); padding: 12px; display: flex; flex-direction: column;
+  gap: 4px; font-size: 14px;
+}
+.sb-section { margin-top: 12px; }
+.sb-section:first-child { margin-top: 0; }
+.sb-label {
+  padding: 0 8px 4px; font-family: var(--font-mono); font-size: 12px;
+  text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted-foreground);
+}
+.sb-label.btn-row { display: flex; align-items: center; gap: 4px; }
+.sb-label svg { width: 12px; height: 12px; flex: none; }
+.sb-items { display: flex; flex-direction: column; gap: 2px; }
+.sb-item {
+  position: relative; display: flex; align-items: center; gap: 6px;
+  border-radius: var(--radius-lg);
+}
+.sb-item > a {
+  display: flex; flex: 1; align-items: center; gap: 10px; padding: 6px 12px;
+  font-size: 14px; color: var(--muted-foreground); text-decoration: none;
+}
+.sb-item.active { background: oklch(56% 0.17 255 / 0.12); }
+.sb-item.active > a { color: var(--brand); }
+.sb-item.active::before {
+  content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 2px;
+  border-radius: 999px; background: var(--brand);
+}
+.sb-item svg { width: 14px; height: 14px; }
+.sb-item .ico { display: inline-flex; width: 16px; height: 16px; align-items: center; justify-content: center; color: var(--muted-foreground); }
+.sb-item.active .ico { color: var(--brand); }
+.sb-item .count {
+  border-radius: 999px; padding: 0 8px; font-size: 10px;
+  background: var(--muted); color: var(--muted-foreground); font-variant-numeric: tabular-nums;
+}
+.sb-item.active .count { background: oklch(56% 0.17 255 / 0.15); color: var(--brand); }
+.sb-sub { color: var(--muted-foreground); }
+.dot15 { width: 6px; height: 6px; border-radius: 50%; flex: none; display: block; }
+
+/* Main — radial brand wash + mx-auto max-w-6xl px-6 py-6 */
+.main { position: relative; flex: 1; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; }
+.main::-webkit-scrollbar { display: none; }
+.main::before {
+  content: ""; position: absolute; inset-inline: 0; top: 0; height: 224px; pointer-events: none;
+  background: radial-gradient(ellipse 55% 60% at 50% -25%, var(--brand), transparent 70%);
+  opacity: 0.05;
+}
+.page { position: relative; margin: 0 auto; width: 100%; max-width: 1152px; padding: 24px; }
+
+/* ---------------- primitives ---------------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 36px; padding: 0 16px; border-radius: var(--radius-lg);
+  border: 1px solid transparent; background: var(--primary); color: var(--primary-foreground);
+  font-size: 14px; font-weight: 500; white-space: nowrap; cursor: pointer;
+  transition: transform .12s ease, background .12s ease;
+}
+.btn svg { width: 16px; height: 16px; }
+.btn.sm { height: 32px; padding: 0 12px; gap: 6px; font-size: 12.8px; border-radius: 10px; }
+.btn.sm svg { width: 14px; height: 14px; }
+.btn.outline { background: var(--background); color: var(--foreground); border-color: var(--border); }
+.btn.ghost { background: transparent; color: var(--foreground); }
+.btn.destructive { background: oklch(55% 0.20 25 / 0.1); color: var(--destructive); }
+.btn.pressed { transform: translateY(1px); }
+
+.card {
+  border: 1px solid var(--border); background: var(--card); border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-e1); overflow: hidden;
+}
+.input {
+  display: flex; align-items: center; height: 36px; width: 100%;
+  border: 1px solid var(--input); border-radius: var(--radius-lg);
+  background: var(--card); padding: 0 12px; font-size: 14px;
+}
+.input.focus { border-color: var(--ring); box-shadow: 0 0 0 3px oklch(56% 0.17 255 / 0.18); }
+.input .ph { color: var(--muted-foreground); }
+.select { justify-content: space-between; }
+.select svg { width: 16px; height: 16px; opacity: .5; }
+.label { font-size: 12px; font-weight: 500; display: block; }
+.hint { font-size: 12px; color: var(--muted-foreground); }
+.mono { font-family: var(--font-mono); }
+
+/* PageHeader */
+.pagehead {
+  margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+}
+.pagehead h1 { font-size: 30px; font-weight: 600; letter-spacing: -0.025em; }
+.pagehead .desc { margin-top: 6px; font-size: 14px; color: var(--muted-foreground); }
+.pagehead .eyebrow {
+  margin-bottom: 8px; font-family: var(--font-mono); font-size: 12px;
+  text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted-foreground);
+}
+.pagehead .actions { display: flex; gap: 8px; flex: none; align-items: center; }
+.backlink {
+  display: inline-flex; align-items: center; gap: 4px; margin-bottom: 12px;
+  font-size: 12px; color: var(--muted-foreground);
+}
+.backlink svg { width: 12px; height: 12px; }
+
+.sectionlabel {
+  font-family: var(--font-mono); font-size: 12px; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--muted-foreground);
+}
+
+/* EmptyState */
+.empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  border: 1px dashed var(--border); border-radius: var(--radius-2xl);
+  padding: 56px 0; text-align: center;
+}
+.empty .ico { color: var(--muted-foreground); margin-bottom: 4px; }
+.empty .t { font-size: 14px; font-weight: 500; }
+.empty .d { max-width: 384px; font-size: 12px; color: var(--muted-foreground); }
+.empty .a { margin-top: 12px; }
+
+/* segmented control (scope picker / cadence) */
+.seg { display: flex; gap: 4px; border: 1px solid var(--border); background: var(--card); border-radius: 999px; padding: 4px; }
+.seg button {
+  flex: 1; border: 0; background: none; border-radius: 999px; padding: 6px 12px;
+  font-family: inherit; font-size: 12px; font-weight: 500; color: var(--muted-foreground);
+  cursor: pointer; transition: background .18s ease, color .18s ease;
+}
+.seg button.on { background: oklch(56% 0.17 255 / 0.12); color: var(--brand); }
+
+/* option list */
+.optlist {
+  margin-top: 8px; display: flex; flex-direction: column; gap: 4px;
+  border: 1px solid var(--border); border-radius: var(--radius-xl);
+  background: oklch(98.5% 0.004 250 / 0.4); padding: 6px; max-height: 256px; overflow: hidden;
+}
+.opt {
+  display: flex; align-items: center; gap: 10px; border-radius: var(--radius-lg);
+  padding: 8px 10px; font-size: 14px; transition: background .18s ease, color .18s ease;
+}
+.opt.on { background: oklch(56% 0.17 255 / 0.12); color: var(--brand); }
+.opt .name { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.opt .check { margin-left: auto; width: 16px; height: 16px; opacity: 0; }
+.opt.on .check { opacity: 1; }
+.sq6 { width: 24px; height: 24px; border-radius: var(--radius-md); display: grid; place-items: center; font-size: 10.4px; font-weight: 700; flex: none; background: var(--muted); color: var(--muted-foreground); }
+
+/* chips (delivery) */
+.chip {
+  display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border);
+  background: oklch(96% 0.004 250 / 0.4); border-radius: 999px;
+  padding: 4px 6px 4px 12px; font-size: 12px; font-weight: 500;
+}
+.chip .x { display: grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; color: var(--muted-foreground); }
+.chip .x svg { width: 12px; height: 12px; }
+
+/* ScopeIdentity */
+.scopeid { display: inline-flex; min-width: 0; align-items: center; gap: 10px; }
+.scopeid .av {
+  display: grid; place-items: center; font-weight: 700; flex: none;
+  width: 28px; height: 28px; border-radius: var(--radius-lg); font-size: 11.2px;
+  background: var(--muted); color: var(--muted-foreground);
+}
+.scopeid.lg .av { width: 36px; height: 36px; border-radius: var(--radius-xl); font-size: 14px; }
+.scopeid .n { display: block; font-size: 14px; font-weight: 600; }
+.scopeid.lg .n { font-size: 15.2px; }
+.scopeid .m { display: block; font-size: 12px; color: var(--muted-foreground); }
+
+/* StatusBadge / NoActivityBadge */
+.statusbadge {
+  display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border);
+  border-radius: 999px; padding: 2px 10px; font-family: var(--font-mono);
+  font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted-foreground);
+}
+.statusbadge i { width: 6px; height: 6px; border-radius: 50%; display: block; }
+.statusbadge svg { width: 12px; height: 12px; }
+
+/* pills */
+.pillbar { display: inline-flex; flex-wrap: wrap; gap: 4px; border: 1px solid var(--border); background: var(--card); border-radius: 999px; padding: 4px; box-shadow: 0 1px 2px oklch(22% 0.02 255 / 0.05); }
+.pillbar button {
+  border: 0; background: none; border-radius: 999px; padding: 6px 14px;
+  font-family: inherit; font-size: 12px; font-weight: 500; color: var(--muted-foreground); cursor: pointer;
+}
+.pillbar button.on { background: oklch(56% 0.17 255 / 0.12); color: var(--brand); }
+
+.switch { width: 32px; height: 18px; border-radius: 999px; background: var(--input); position: relative; flex: none; }
+.switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.2); }
+
+/* work tag pills on brief cards */
+.wtag { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 4px 10px; font-size: 12px; font-weight: 600; }
+.wtag i { width: 6px; height: 6px; border-radius: 50%; display: block; }
+
+/* spinner */
+.spin { animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.pulse { animation: pulse 1.4s ease-in-out infinite; }
+@keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: .45 } }
+
+/* toast (sonner, bottom-right) */
+.toast {
+  position: absolute; right: 24px; bottom: 24px; display: flex; align-items: center; gap: 10px;
+  border: 1px solid var(--border); background: var(--card); border-radius: var(--radius-lg);
+  padding: 14px 16px; font-size: 13px; font-weight: 500; box-shadow: var(--shadow-e2);
+  opacity: 0; transform: translateY(10px); transition: all .3s ease; z-index: 40;
+}
+.toast.on { opacity: 1; transform: none; }
+
+/* ---------------- title / outro ---------------- */
+.card-scene {
+  height: 100%; display: grid; place-content: center; justify-items: center; gap: 20px; text-align: center;
+  background: radial-gradient(1100px 520px at 50% 0%, oklch(56% 0.17 255 / 0.10), transparent 70%), var(--background);
+}
+.card-scene h1 { font-size: 44px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; max-width: 800px; }
+.card-scene p { font-size: 18px; color: var(--muted-foreground); max-width: 620px; }
+.card-scene .eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--brand); }
+
+/* ---------------- optional: third-party screen ----------------
+   Example only — github.com's install page, in github.com's styling, not the
+   product's. Swap it for whichever third party your flow passes through
+   (an OAuth consent screen, a payment page), or delete the block. */
+.gh { height: 100%; background: #f6f8fa; color: #1f2328; font-family: -apple-system, 'Segoe UI', system-ui, sans-serif; }
+.gh-header { height: 48px; background: #24292f; display: flex; align-items: center; padding: 0 24px; gap: 12px; color: #fff; font-size: 14px; }
+.gh-wrap { display: grid; place-content: center; padding-top: 40px; }
+.gh-card { width: 544px; background: #fff; border: 1px solid #d0d7de; border-radius: 6px; }
+.gh-card h2 { font-size: 20px; font-weight: 600; padding: 16px; border-bottom: 1px solid #d0d7de; }
+.gh-row { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #d8dee4; font-size: 14px; }
+.gh-row.sel { background: #ddf4ff; }
+.gh-radio { width: 16px; height: 16px; border-radius: 50%; border: 1px solid #8c959f; flex: none; display: grid; place-items: center; }
+.gh-row.sel .gh-radio { border-color: #0969da; border-width: 5px; }
+.gh-av { width: 32px; height: 32px; border-radius: 6px; background: #24292f; color: #fff; display: grid; place-items: center; font-size: 13px; font-weight: 600; flex: none; }
+.gh-perms { padding: 16px; font-size: 13px; color: #57606a; }
+.gh-perms li { list-style: none; display: flex; gap: 8px; margin-top: 6px; }
+.gh-foot { padding: 16px; }
+.gh-btn { width: 100%; height: 32px; border-radius: 6px; border: 1px solid rgba(31,35,40,.15); background: #1f883d; color: #fff; font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer; }
+.gh-btn.pressed { background: #1a7f37; }
+
+/* ---------------- optional: delivery scene ----------------
+   Side-by-side "where the output lands" panels (a chat message, an email).
+   Delete if the flow ends inside the product. */
+.delivery { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+.win { border: 1px solid var(--border); border-radius: var(--radius-xl); overflow: hidden; background: var(--card); box-shadow: var(--shadow-e1); }
+.win-head { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--border); background: var(--muted); font-size: 12.5px; font-weight: 600; }
+.slackmsg { display: flex; gap: 10px; padding: 14px; }
+.slackmsg .bot { width: 36px; height: 36px; border-radius: 8px; background: var(--foreground); display: grid; place-items: center; flex: none; }
+.slackmsg .who { font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+.appchip { font-size: 9.5px; background: var(--muted); border-radius: 3px; padding: 1px 4px; color: var(--muted-foreground); font-weight: 600; }
+.slackmsg .txt { font-size: 12.5px; line-height: 1.55; margin-top: 4px; color: oklch(32% 0.02 255); }
+.mail { padding: 14px; }
+
+/* ---------------- cursor / captions ---------------- */
+#cursor {
+  position: absolute; left: 0; top: 0; width: 22px; height: 22px; z-index: 60;
+  pointer-events: none; opacity: 0;
+  transition: transform 1s cubic-bezier(.22,.61,.36,1), opacity .3s ease;
+  filter: drop-shadow(0 2px 4px oklch(22% 0.02 255 / 0.35));
+}
+#ripple {
+  position: absolute; z-index: 59; width: 34px; height: 34px; margin: -17px 0 0 -17px;
+  border-radius: 50%; border: 2px solid var(--brand); opacity: 0; pointer-events: none;
+}
+#ripple.go { animation: rip .5s ease-out; }
+@keyframes rip { from { opacity: .9; transform: scale(.25); } to { opacity: 0; transform: scale(1.15); } }
+
+/* Four caption designs ship; CAPTIONS.style near play() picks one.
+   See SKILL.md "Caption design" for which to pick. Default is 'pill'. */
+.cap { position: absolute; z-index: 55; opacity: 0;
+       transition: opacity .3s ease, transform .34s cubic-bezier(.22,.61,.36,1); }
+.cap.on { opacity: 1; }
+
+/* 'pill' — floating capsule, bottom centre. Also the fallback for 'coach'. */
+.cap-pill {
+  left: 50%; bottom: 28px; transform: translate(-50%, 12px);
+  display: inline-flex; align-items: center; gap: 11px;
+  max-width: 760px; padding: 11px 24px 11px 18px; border-radius: 999px;
+  background: oklch(22% 0.02 255 / 0.92);
+  box-shadow: 0 12px 32px -12px oklch(22% 0.02 255 / .55), inset 0 1px 0 oklch(100% 0 0 / .12);
+  backdrop-filter: blur(8px) saturate(1.3);
+  color: #fff; font-size: 15px; font-weight: 600; letter-spacing: -.006em; line-height: 1.35;
+  text-align: center; text-wrap: balance;
+}
+.cap-pill.on { transform: translate(-50%, 0); }
+.cap-pill .dot { width: 7px; height: 7px; border-radius: 50%; flex: none;
+                 background: var(--brand); box-shadow: 0 0 0 3px oklch(56% 0.17 255 / .28); }
+
+/* 'lower-third' — anchored block with step index + run progress. */
+.cap-lt {
+  left: 32px; bottom: 38px; transform: translateY(14px);
+  max-width: 660px; padding: 13px 26px 15px 21px;
+  border-left: 3px solid var(--brand); border-radius: 3px 16px 16px 3px;
+  background: oklch(22% 0.02 255 / 0.94);
+  box-shadow: 0 20px 44px -20px oklch(22% 0.02 255 / .65);
+  backdrop-filter: blur(8px) saturate(1.3); color: #fff;
+}
+.cap-lt.on { transform: none; }
+.lt-idx { font-family: var(--font-mono); font-size: 11px; font-weight: 500; letter-spacing: .18em;
+          text-transform: uppercase; color: oklch(76% 0.12 255); margin-bottom: 7px; }
+.lt-txt { font-size: 20px; font-weight: 600; letter-spacing: -.02em; line-height: 1.28; }
+.cap-prog { position: absolute; left: 0; right: 0; bottom: 0; height: 3px;
+            background: oklch(22% 0.02 255 / .12); z-index: 56; }
+.cap-prog i { display: block; height: 100%; width: 0; background: var(--brand);
+              transition: width .6s cubic-bezier(.22,.61,.36,1); }
+
+/* 'rail' — band below the window; the app area drops 756px → 688px. */
+#stage[data-captions="rail"] #viewport { height: calc(100% - 112px); }
+.railband { height: 68px; display: flex; align-items: center; gap: 18px; padding: 0 26px;
+            background: oklch(19% 0.02 255); color: #fff; }
+.rail-dots { display: flex; align-items: center; gap: 6px; flex: none; }
+.rail-dots i { width: 6px; height: 6px; border-radius: 999px; background: oklch(100% 0 0 / .2);
+               transition: width .3s ease, background .3s ease; }
+.rail-dots i.done { background: oklch(100% 0 0 / .45); }
+.rail-dots i.now { width: 20px; background: var(--brand); }
+.rail-body { flex: 1; min-width: 0; }
+.rail-txt { display: block; font-size: 17px; font-weight: 600; letter-spacing: -.012em;
+            opacity: 0; transform: translateY(8px);
+            transition: opacity .3s ease, transform .34s cubic-bezier(.22,.61,.36,1); }
+.rail-txt.on { opacity: 1; transform: none; }
+.rail-idx { flex: none; font-family: var(--font-mono); font-size: 12px; letter-spacing: .14em;
+            color: oklch(100% 0 0 / .42); }
+
+/* 'coach' — callout anchored to the element in play, rest of the frame dimmed. */
+.coach-ring {
+  position: absolute; z-index: 51; border-radius: 12px; opacity: 0; transition: opacity .3s ease;
+  box-shadow: 0 0 0 3px oklch(56% 0.17 255 / .5), 0 0 0 9999px oklch(22% 0.02 255 / .16);
+}
+.coach-ring.on { opacity: 1; }
+.cap-coach {
+  max-width: 330px; padding: 12px 15px 13px; border-radius: 14px;
+  background: var(--card); border: 1px solid var(--border); box-shadow: var(--shadow-e2);
+  color: var(--foreground); font-size: 13.5px; font-weight: 600; letter-spacing: -.008em;
+  line-height: 1.4; transform: translateY(8px);
+}
+.cap-coach.on { transform: none; }
+.cap-coach .step { display: block; font-family: var(--font-mono); font-size: 10.5px; font-weight: 500;
+                   letter-spacing: .16em; text-transform: uppercase; color: var(--brand); margin-bottom: 5px; }
+.cap-coach .arrow { position: absolute; width: 12px; height: 12px; background: var(--card);
+                    transform: rotate(45deg); }
+.cap-coach.below .arrow { top: -7px; border-left: 1px solid var(--border); border-top: 1px solid var(--border); }
+.cap-coach.above .arrow { bottom: -7px; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+
+#replay { position: absolute; inset: 0; z-index: 70; display: none; place-content: center; justify-items: center; gap: 14px; background: oklch(98.5% 0.004 250 / 0.86); backdrop-filter: blur(3px); }
+#replay.on { display: grid; }
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <div class="browserbar">
+    <div class="dots"><i></i><i></i><i></i></div>
+    <div class="urlbar">
+      <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+      <span id="url"></span>
+    </div>
+  </div>
+
+  <div id="viewport">
+
+    <!-- =============== 0 · TITLE =============== -->
+    <section class="scene card-scene" data-scene="0">
+      <span class="brandmark" data-mark></span>
+      <h1>REPLACE: one-line promise of the flow</h1>
+      <p>REPLACE: one sentence of context.</p>
+    </section>
+
+    <!-- =============== 1 · EXAMPLE APP SCREEN ===============
+         Copy this block per screen. On the sidebar:
+           data-active="<id>"        the NAV id to highlight
+           data-counts="items:3"     count pills, comma-separated id:n pairs
+           data-dots="inbox"         unread dot, comma-separated ids       -->
+    <section class="scene" data-scene="1">
+      <div class="app">
+        <div class="topbar" data-topbar></div>
+        <div class="body-row">
+          <div class="sidebar" data-sidebar data-active="items"></div>
+          <div class="main"><div class="page">
+
+            <!-- page header — transcribe from the app's own header component -->
+            <div class="pagehead">
+              <div>
+                <h1>REPLACE: page title</h1>
+                <div class="desc">REPLACE: page description, verbatim from the route</div>
+              </div>
+              <div class="actions">
+                <button class="btn sm" id="btn-example">Primary action</button>
+              </div>
+            </div>
+
+            <!-- empty state — transcribe from the app's own empty-state component -->
+            <div class="empty">
+              <div class="t">REPLACE: empty title</div>
+              <div class="d">REPLACE: empty description</div>
+              <div class="a"><button class="btn">Action</button></div>
+            </div>
+
+          </div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =============== N · OUTRO =============== -->
+    <section class="scene card-scene" data-scene="9">
+      <span class="brandmark" data-mark></span>
+      <h1 style="font-size:40px">REPLACE: closing line</h1>
+      <div class="eyebrow" data-host></div>
+    </section>
+
+    <!-- caption nodes are injected by initCaptions(), per CAPTIONS.style -->
+    <div id="ripple"></div>
+    <svg id="cursor" viewBox="0 0 24 24"><path d="M5 2l7.5 18.5 2.6-7.4 7.4-2.6z" fill="#fff" stroke="oklch(22% 0.02 255)" stroke-width="1.4" stroke-linejoin="round"/></svg>
+
+    <div id="replay">
+      <button class="btn" onclick="location.reload()">Replay demo</button>
+      <div class="hint">Or press R</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = (s, root = document) => root.querySelector(s);
+const $$ = (s, root = document) => [...root.querySelectorAll(s)];
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+function fit() {
+  const s = Math.min(window.innerWidth / 1280, window.innerHeight / 800, 1);
+  $('#stage').style.transform = `scale(${s})`;
+}
+addEventListener('resize', fit);
+fit();
+
+/* ---------------------------------------------------------------------------
+   Shared chrome — one template, so every screen gets the identical topbar and
+   sidebar the app's shell renders. Transcribe all of it from the real shell
+   components before writing any scene; chrome that doesn't match is the first
+   thing a viewer who uses the product will notice.
+   ------------------------------------------------------------------------- */
+// Placeholder glyph set. REPLACE each with the path data of the icon the app
+// actually uses (lucide, heroicons, a custom set) — same library, same shape.
+const ICONS = {
+  home: '<path d="M3 11l9-8 9 8v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+  file: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>',
+  cal: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 11h18M12 15v3M10.5 16.5h3"/>',
+  plug: '<path d="M9 2v6M15 2v6M6 8h12v5a6 6 0 0 1-12 0z"/><path d="M12 19v3"/>',
+  gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 7 19.4a1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 3 14a2 2 0 1 1 0-4 1.7 1.7 0 0 0 1.5-2.6l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 10 3a2 2 0 1 1 4 0 1.7 1.7 0 0 0 2.6 1.5l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 21 10a2 2 0 1 1 0 4 1.7 1.7 0 0 0-1.6 1z"/>',
+  chevD: '<path d="M6 9l6 6 6-6"/>',
+};
+const svg = (d, cls = '') =>
+  `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+
+/* Product identity — the only place the name, host and mark are written down.
+   Fill all three in from the real app: the mark is its actual logo svg (drop
+   the width/height attributes, the .brandmark rule sizes it), the host is the
+   domain the address bar shows. */
+const PRODUCT = {
+  name: 'REPLACE: Product',
+  host: 'app.example.com',
+  mark: `
+    <svg viewBox="0 0 32 32" fill="none" aria-label="REPLACE: product logo">
+      <rect x="1.5" y="1.5" width="29" height="29" rx="9" fill="var(--brand)"/>
+      <path d="M10 21.5 16 10l6 11.5" stroke="var(--brand-foreground)" stroke-width="3"
+            stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>`,
+};
+
+// The workspace / account / tenant in the topbar. If the app derives the avatar
+// colour from the name, run that helper for this exact string instead of
+// picking one — see SKILL.md, "Sample data must be internally consistent".
+const ORG_NAME = 'Acme Robotics';
+const ORG_COLOR = 'hsl(323deg 65% 55%)';
+
+/* Topbar, transcribed. Delete the controls the app doesn't have; a demo that
+   shows a command palette or an org switcher the product lacks is a lie. */
+const TOPBAR = `
+  <div class="tb-left">
+    <div class="tb-brand"><span class="brandmark">${PRODUCT.mark}</span><span>${PRODUCT.name}</span></div>
+    <div class="tb-div"></div>
+    <button class="btn outline sm" style="gap:8px">
+      <span class="orgav" style="width:20px;height:20px;font-size:9.6px;background:${ORG_COLOR}">${ORG_NAME[0]}</span>
+      <span>${ORG_NAME}</span>
+      <span class="role">owner</span>
+      ${svg(ICONS.chevD)}
+    </button>
+  </div>
+  <div class="cmdk">
+    ${svg('<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>')}
+    <span>REPLACE: the app's search placeholder</span>
+    <kbd>⌘K</kbd>
+  </div>
+  <div class="tb-right">
+    <button class="btn ghost sm" style="width:32px;padding:0">${svg('<path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>')}</button>
+    <button class="btn ghost sm" style="width:32px;padding:0">${svg('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>')}</button>
+    <button class="btn ghost sm">${svg('<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>')}<span style="font-size:12px">Sign out</span></button>
+    <span class="avatar-7">${ORG_NAME[0]}</span>
+  </div>`;
+
+/* The real sidebar, transcribed — sections in source order, labels verbatim.
+   `id` is what a scene's data-active matches. REPLACE every entry. */
+const NAV = [
+  { items: [
+    { id: 'home',  icon: ICONS.home, label: 'Home' },
+    { id: 'items', icon: ICONS.file, label: 'REPLACE: nav item' },
+    { id: 'plan',  icon: ICONS.cal,  label: 'REPLACE: nav item' },
+  ] },
+  { label: 'REPLACE: group', items: [
+    { id: 'sources', icon: ICONS.plug, label: 'REPLACE: nav item' },
+  ] },
+  { label: 'Workspace', items: [
+    { id: 'settings', icon: ICONS.gear, label: 'Settings' },
+  ] },
+];
+
+function sidebarHTML({ active, counts, dots }) {
+  const item = ({ id, icon, label }) => `
+    <div class="sb-item ${active === id ? 'active' : ''}">
+      <a>
+        <span class="ico">${svg(icon)}</span>
+        <span style="flex:1">${label}${dots.includes(id) ? '<span class="sb-sub" style="margin-left:4px">•</span>' : ''}</span>
+        ${counts[id] === undefined ? '' : `<span class="count">${counts[id]}</span>`}
+      </a>
+    </div>`;
+  return NAV.map((section) => `
+    <div class="sb-section">
+      ${section.label ? `<div class="sb-label">${section.label}</div>` : ''}
+      <div class="sb-items">${section.items.map(item).join('')}</div>
+    </div>`).join('');
+}
+
+const csv = (v) => (v ?? '').split(',').map((x) => x.trim()).filter(Boolean);
+
+$$('[data-topbar]').forEach((el) => { el.innerHTML = TOPBAR; });
+$$('[data-sidebar]').forEach((el) => {
+  el.innerHTML = sidebarHTML({
+    active: el.dataset.active,
+    counts: Object.fromEntries(csv(el.dataset.counts).map((p) => p.split(':'))),
+    dots: csv(el.dataset.dots),
+  });
+});
+$$('[data-mark]').forEach((el) => { el.innerHTML = PRODUCT.mark; });
+$$('[data-host]').forEach((el) => { el.textContent = PRODUCT.host; });
+
+/* ---------------------------------------------------------------------------
+   Playback engine — do not edit below except CAPTIONS, URLS and play().
+   ------------------------------------------------------------------------- */
+const scenes = $$('.scene');
+
+// Caption design. 'pill' | 'lower-third' | 'rail' | 'coach' — see SKILL.md.
+// steps is the number of say() calls the run makes; it drives the step index,
+// the progress track and the rail's chapter dots.
+const CAPTIONS = { style: 'pill', steps: 6 };
+
+// The address bar per scene. Real routes only — paths the router actually has.
+const URLS = {
+  0: PRODUCT.host,
+  1: `${PRODUCT.host}/REPLACE-route`,
+  9: PRODUCT.host,
+};
+$('#url').textContent = PRODUCT.host;
+function scene(n) {
+  scenes.forEach((s) => s.classList.toggle('on', +s.dataset.scene === n));
+  if (URLS[n]) $('#url').textContent = URLS[n];
+}
+
+const cursor = $('#cursor');
+const ripple = $('#ripple');
+let cx = 640, cy = 700;
+function place(x, y, ms = 900) {
+  cx = x; cy = y;
+  cursor.style.transitionDuration = ms + 'ms';
+  cursor.style.transform = `translate(${x}px, ${y}px)`;
+}
+
+// Long forms run past the fold, exactly as they do in the app — scroll the
+// target into view before the pointer goes for it.
+async function reveal(el) {
+  const main = el.closest('.main');
+  if (!main) return;
+  const r = el.getBoundingClientRect();
+  const m = main.getBoundingClientRect();
+  if (r.top > m.top + 80 && r.bottom < m.bottom - 80) return;
+  main.scrollTo({
+    top: main.scrollTop + (r.top - m.top) - m.height / 2 + r.height / 2,
+    behavior: 'smooth',
+  });
+  await wait(750);
+}
+
+async function moveTo(sel, ms = 900) {
+  const el = typeof sel === 'string' ? $(sel) : sel;
+  await reveal(el);
+  const vp = $('#viewport').getBoundingClientRect();
+  const r = el.getBoundingClientRect();
+  const scale = vp.width / 1280;
+  cursor.style.opacity = 1;
+  place((r.left + r.width / 2 - vp.left) / scale - 2, (r.top + r.height / 2 - vp.top) / scale - 2, ms);
+  await wait(ms + 80);
+}
+async function click(sel) {
+  const el = typeof sel === 'string' ? $(sel) : sel;
+  ripple.style.left = cx + 2 + 'px';
+  ripple.style.top = cy + 2 + 'px';
+  ripple.classList.remove('go');
+  void ripple.offsetWidth;
+  ripple.classList.add('go');
+  if (el) { el.classList.add('pressed'); await wait(130); el.classList.remove('pressed'); }
+  await wait(220);
+}
+async function tap(sel, ms = 900) { await moveTo(sel, ms); await click(sel); }
+function hideCursor() { cursor.style.opacity = 0; }
+
+/* Captions. CAPTIONS.style is set with URLS above; every style shares the
+   same say()/hush() so play() never has to know which one is on. */
+const CAP = {};
+const capPad = (n) => (n < 10 ? '0' : '') + n;
+let capStep = 0;
+
+(function initCaptions() {
+  const vp = $('#viewport');
+  const mk = (cls, html, parent = vp) => {
+    const d = document.createElement('div');
+    d.className = cls; d.innerHTML = html; parent.appendChild(d); return d;
+  };
+  $('#stage').dataset.captions = CAPTIONS.style;
+
+  if (CAPTIONS.style === 'pill' || CAPTIONS.style === 'coach')
+    CAP.pill = mk('cap cap-pill', '<span class="dot"></span><span class="t"></span>');
+
+  if (CAPTIONS.style === 'lower-third') {
+    CAP.lt = mk('cap cap-lt', '<div class="lt-idx"></div><div class="lt-txt"></div>');
+    CAP.prog = mk('cap-prog', '<i></i>');
+  }
+  if (CAPTIONS.style === 'rail') {
+    CAP.rail = mk('railband',
+      `<span class="rail-dots">${'<i></i>'.repeat(CAPTIONS.steps)}</span>`
+      + '<span class="rail-body"><span class="rail-txt"></span></span>'
+      + '<span class="rail-idx"></span>', $('#stage'));
+  }
+  if (CAPTIONS.style === 'coach') {
+    CAP.ring = mk('coach-ring', '');
+    CAP.coach = mk('cap cap-coach', '<span class="step"></span><span class="t"></span><span class="arrow"></span>');
+  }
+})();
+
+/* say('…')                → advances one step, default placement
+   say('…', { at: sel })   → 'coach' anchors to that element; other styles ignore it
+   say('…', { step: n })   → force the step index (title cards, repeats)          */
+function say(text, opts = {}) {
+  capStep = opts.step ?? capStep + 1;
+  const idx = `${capPad(capStep)} / ${capPad(CAPTIONS.steps)}`;
+
+  if (CAPTIONS.style === 'lower-third') {
+    $('.lt-idx', CAP.lt).textContent = `Step ${idx}`;
+    $('.lt-txt', CAP.lt).textContent = text;
+    CAP.lt.classList.add('on');
+    $('i', CAP.prog).style.width = Math.min(100, (capStep / CAPTIONS.steps) * 100) + '%';
+    return;
+  }
+  if (CAPTIONS.style === 'rail') {
+    const t = $('.rail-txt', CAP.rail);
+    t.classList.remove('on');
+    t.textContent = text;
+    $('.rail-idx', CAP.rail).textContent = idx;
+    $$('.rail-dots i', CAP.rail).forEach((d, i) => {
+      d.classList.toggle('done', i < capStep - 1);
+      d.classList.toggle('now', i === capStep - 1);
+    });
+    requestAnimationFrame(() => t.classList.add('on'));
+    return;
+  }
+  if (CAPTIONS.style === 'coach' && opts.at && $(opts.at)) {
+    coachAt($(opts.at), text, idx);
+    return;
+  }
+  $('.t', CAP.pill).textContent = text;
+  CAP.pill.classList.add('on');
+}
+
+function hush() {
+  if (CAPTIONS.style === 'rail') { $('.rail-txt', CAP.rail).classList.remove('on'); return; }
+  ['pill', 'lt', 'coach', 'ring'].forEach((k) => CAP[k] && CAP[k].classList.remove('on'));
+}
+
+// Measures the live element, so call it AFTER moveTo() has scrolled the target in.
+function coachAt(el, text, idx) {
+  const v = $('#viewport').getBoundingClientRect();
+  const r = el.getBoundingClientRect();
+  const x = r.left - v.left, y = r.top - v.top, pad = 6;
+  CAP.ring.style.cssText =
+    `left:${x - pad}px;top:${y - pad}px;width:${r.width + pad * 2}px;height:${r.height + pad * 2}px`;
+
+  $('.step', CAP.coach).textContent = `Step ${idx}`;
+  $('.t', CAP.coach).textContent = text;
+  const cw = CAP.coach.offsetWidth, ch = CAP.coach.offsetHeight;
+  const below = y + r.height + 16 + ch < v.height - 16;
+  const left = Math.max(24, Math.min(x + r.width > 640 ? x + r.width - cw : x, 1280 - cw - 24));
+  CAP.coach.classList.toggle('below', below);
+  CAP.coach.classList.toggle('above', !below);
+  CAP.coach.style.left = left + 'px';
+  CAP.coach.style.top = (below ? y + r.height + 16 : y - ch - 16) + 'px';
+  $('.arrow', CAP.coach).style.left =
+    Math.min(Math.max(x + r.width / 2 - left - 6, 16), cw - 28) + 'px';
+
+  CAP.ring.classList.add('on');
+  CAP.coach.classList.add('on');
+}
+
+async function type(el, text, ms = 45) {
+  el.classList.remove('ph');
+  el.textContent = '';
+  for (const ch of text) { el.textContent += ch; await wait(ms); }
+}
+
+/* ---------------------------------------------------------------------------
+   The demo script. One block per scene, in order.
+   ------------------------------------------------------------------------- */
+async function play() {
+  scene(0);
+  await wait(2800);
+
+  scene(1);
+  hideCursor(); place(640, 720, 0);
+  await wait(600);
+  say('REPLACE: what this step is');
+  await wait(1000);
+  await tap('#btn-example', 1000);
+  hush();
+  await wait(250);
+
+  scene(9);
+  await wait(2800);
+
+  window.__demoDone = true;
+  if (!new URLSearchParams(location.search).has('record')) $('#replay').classList.add('on');
+}
+
+addEventListener('keydown', (e) => { if (e.key.toLowerCase() === 'r') location.reload(); });
+// Wait for fonts so the recording never captures a fallback-font frame.
+(document.fonts ? document.fonts.ready : Promise.resolve()).then(() => play());
+</script>
+</body>
+</html>

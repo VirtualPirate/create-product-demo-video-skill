@@ -1,0 +1,38 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "virtualpirate-demo-video",
+  "owner": {
+    "name": "VirtualPirate",
+    "url": "https://github.com/VirtualPirate"
+  },
+  "metadata": {
+    "description": "Product demo video recording for Claude Code. One plugin: create-product-demo-video."
+  },
+  "plugins": [
+    {
+      "name": "create-product-demo-video",
+      "source": "./",
+      "description": "Records a product demo video of a real user flow in whatever web app your repo contains — routes and components transcribed from the source, recorded to mp4 or gif with Playwright + ffmpeg, optionally over a music bed.",
+      "author": {
+        "name": "VirtualPirate",
+        "url": "https://github.com/VirtualPirate"
+      },
+      "license": "MIT",
+      "category": "productivity",
+      "homepage": "https://github.com/VirtualPirate/create-product-demo-video-skill",
+      "keywords": [
+        "demo-video",
+        "product-demo",
+        "screencast",
+        "screen-recording",
+        "walkthrough",
+        "playwright",
+        "ffmpeg",
+        "mp4",
+        "gif",
+        "launch-video",
+        "marketing-video"
+      ]
+    }
+  ]
+}
