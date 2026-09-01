@@ -35,8 +35,15 @@ That constraint is the whole skill. Everything below is machinery in service of 
 
 ### Claude Code — plugin (recommended)
 
+Two separate commands. Run the first, let it finish, then run the second — if
+`/plugin marketplace add` opens a prompt asking for a source, that prompt wants the
+`owner/repo` on its own, nothing else.
+
 ```
 /plugin marketplace add VirtualPirate/create-product-demo-video-skill
+```
+
+```
 /plugin install create-product-demo-video@virtualpirate-demo-video
 ```
 
