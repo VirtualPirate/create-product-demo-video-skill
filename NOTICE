@@ -1,0 +1,34 @@
+create-product-demo-video
+Copyright (c) 2026 VirtualPirate
+
+This product includes third-party content that is NOT covered by the MIT
+license in the LICENSE file.
+
+--------------------------------------------------------------------------------
+BUNDLED AUDIO — Pixabay Content License
+--------------------------------------------------------------------------------
+
+skills/create-product-demo-video/assets/music/
+  kornevmusic-upbeat-happy-corporate-487426.mp3
+    "Upbeat Happy Corporate" by KornevMusic
+    https://pixabay.com/music/-487426/
+    Pixabay Content License — retrieved 2026-08-20
+
+  paulyudin-background-background-music-574010.mp3
+    "Background Music" by PaulYudin
+    https://pixabay.com/music/-574010/
+    Pixabay Content License — retrieved 2026-08-20
+
+These recordings remain the property of their authors. The MIT license covers
+this repository's own code and documentation; it does not, and cannot,
+relicense them.
+
+The Pixabay Content License permits commercial use without attribution but
+restricts redistributing content on a standalone basis. If you fork, mirror or
+otherwise redistribute this repository, read the linked track pages and decide
+for yourself. Deleting the files costs nothing: record.mjs produces a silent
+mp4 when no track is present, and `--music /path/to/your.mp3` accepts any file
+you own.
+
+Full provenance and the rules for adding a track:
+skills/create-product-demo-video/assets/music/LICENSES.md

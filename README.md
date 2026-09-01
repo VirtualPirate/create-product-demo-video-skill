@@ -155,4 +155,4 @@ nothing: the recorder runs silent without them. Full provenance in
 ## License
 
 [MIT](LICENSE) for the code and documentation. The bundled mp3s are **not** MIT — they stay under
-the Pixabay Content License, as spelled out at the bottom of `LICENSE`.
+the Pixabay Content License, as spelled out in [`NOTICE`](NOTICE).

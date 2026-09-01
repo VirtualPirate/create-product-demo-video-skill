@@ -19,30 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
--------------------------------------------------------------------------------
-
-THIRD-PARTY CONTENT — NOT COVERED BY THE MIT LICENSE ABOVE
-
-The MIT license covers this repository's own code and documentation. It does
-not, and cannot, relicense the audio files bundled under
-`skills/create-product-demo-video/assets/music/`. Those remain the property of
-their authors and are redistributed here under the Pixabay Content License:
-
-  kornevmusic-upbeat-happy-corporate-487426.mp3
-    "Upbeat Happy Corporate" by KornevMusic
-    https://pixabay.com/music/-487426/ — Pixabay Content License
-
-  paulyudin-background-background-music-574010.mp3
-    "Background Music" by PaulYudin
-    https://pixabay.com/music/-574010/ — Pixabay Content License
-
-Both were downloaded from Pixabay on 2026-08-20. The Pixabay Content License
-permits commercial use without attribution but restricts redistributing files
-on a standalone basis. If you fork, mirror, or otherwise redistribute this
-repository, check the linked track pages yourself and drop the files if you are
-not comfortable — nothing in the skill requires them. `record.mjs` runs silent
-with no track present, and `--music /path/to/your.mp3` takes any file you own.
-
-See `skills/create-product-demo-video/assets/music/LICENSES.md` for the full
-provenance table and the rules for adding a track.

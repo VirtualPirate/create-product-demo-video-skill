@@ -24,7 +24,7 @@ rather not carry them.
 
 Nothing breaks when you do. `record.mjs` produces a silent mp4 when no track is present, and
 `--music /path/to/your.mp3` takes any file you own. The repository's MIT license covers its code and
-prose only; it does not relicense these recordings. See the `LICENSE` file at the repo root.
+prose only; it does not relicense these recordings. See the `NOTICE` file at the repo root.
 
 ## Adding a track
 
