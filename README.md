@@ -135,6 +135,13 @@ compare all four in a browser without recording anything.
 | `rail` | 68px band under the window, chapter dots | Docs and support clips where nothing may be covered |
 | `coach` | Callout anchored to the element in play, rest dimmed | Follow-along walkthroughs |
 
+## Zoom
+
+Optional camera push-in on a small control, such as a short input, a toggle or a generated value.
+Before building, the skill asks whether to zoom on key moments or not at all. It skips the question
+when your prompt already asks for zoom or says no zoom. In `play()`, `zoom('#sel')` pushes in and
+`zoom()` eases back out. The pointer stays full size and follows the zoomed content.
+
 ## Music
 
 Optional and off unless a track is there — Playwright captures no audio at all, so the bed is muxed

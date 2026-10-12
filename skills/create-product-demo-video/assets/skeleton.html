@@ -697,7 +697,8 @@ const URLS = {
 };
 $('#url').textContent = PRODUCT.host;
 function scene(n) {
-  scenes.forEach((s) => s.classList.toggle('on', +s.dataset.scene === n));
+  scenes.forEach((s) => { s.classList.toggle('on', +s.dataset.scene === n); s.style.transform = ''; });
+  cam = { x: 0, y: 0, k: 1 };
   if (URLS[n]) $('#url').textContent = URLS[n];
 }
 
@@ -747,6 +748,32 @@ async function click(sel) {
 }
 async function tap(sel, ms = 900) { await moveTo(sel, ms); await click(sel); }
 function hideCursor() { cursor.style.opacity = 0; }
+
+// Camera push-in. Scales the live scene so `sel` sits mid-frame at `k`×, clamped
+// so the scene's edges never show; zoom() with no target eases back out. The
+// pointer lives outside the scene, so it keeps its size and is carried along
+// with the content under it — same curve as #cursor, so it never slips.
+let cam = { x: 0, y: 0, k: 1 };
+async function zoom(sel, k = 1.6, ms = 900) {
+  const s = $('.scene.on'), W = s.offsetWidth, H = s.offsetHeight;
+  let x = 0, y = 0;
+  if (sel) {
+    const el = typeof sel === 'string' ? $(sel) : sel;
+    await reveal(el);
+    const vp = $('#viewport').getBoundingClientRect(), r = el.getBoundingClientRect(), f = vp.width / 1280;
+    const ex = ((r.left + r.width / 2 - vp.left) / f - cam.x) / cam.k;
+    const ey = ((r.top + r.height / 2 - vp.top) / f - cam.y) / cam.k;
+    x = Math.min(0, Math.max(W - W * k, W / 2 - ex * k));
+    y = Math.min(0, Math.max(H - H * k, H / 2 - ey * k));
+  } else k = 1;
+  if (+cursor.style.opacity) place(x + (cx + 2 - cam.x) / cam.k * k - 2, y + (cy + 2 - cam.y) / cam.k * k - 2, ms);
+  s.style.transformOrigin = '0 0';
+  s.style.transition = `transform ${ms}ms cubic-bezier(.22,.61,.36,1)`;
+  s.style.transform = k === 1 ? '' : `translate(${x}px, ${y}px) scale(${k})`;
+  cam = { x, y, k };
+  await wait(ms + 80);
+  s.style.transition = '';
+}
 
 /* Captions. CAPTIONS.style is set with URLS above; every style shares the
    same say()/hush() so play() never has to know which one is on. */

@@ -14,7 +14,19 @@ product that doesn't exist. Read the source for each screen before writing any m
 
 `/create-product-demo-video <what should happen>` — a flow description. If it is vague ("show off
 the product"), pick the narrowest complete flow that ends in visible value, say which one you
-picked in one line, and build it. Don't block on questions.
+picked in one line, and build it. Don't block on questions — music and zoom are the exceptions.
+
+**Ask about music and zoom before step 1, unless the prompt already settles them.** Put every
+open question in one `AskUserQuestion` call where the harness has it; elsewhere, ask in chat and
+wait for the answer. Ask once, then build without stopping.
+
+- **Music** — one option per track listed in `assets/music/LICENSES.md` (title — author) plus a
+  **No music** option. A free-text answer may be a path to the user's own file. Settled when the
+  prompt names a track or a music file, or says no music / silent / without audio. "With music"
+  alone names no track, so it still gets the question.
+- **Zoom** — **Zoom on key moments** (you pick the 1–3 small controls the flow hinges on) or
+  **No zoom**. A free-text answer names what to zoom on. Settled when the prompt asks for zoom,
+  close-ups or punch-ins, or says no zoom. See [Zoom](#zoom).
 
 ## Steps
 
@@ -36,8 +48,8 @@ picked in one line, and build it. Don't block on questions.
    `~/.claude/skills/`, or a project's `.claude/skills/`. Resolve it from the skill's own directory,
    never from the repo being demoed. The skeleton carries a placeholder shell, a token scale, and
    the playback engine.
-   For a scored demo, also copy the chosen track from `assets/music/` → `demo/vN/music.mp3` — see
-   [Music](#music). Copying it in (rather than referencing the skill folder) is what keeps `vN/`
+   If the music answer picked a track, copy it → `demo/vN/music.<ext>` (bundled tracks come from
+   `assets/music/`); for **No music**, copy nothing — see [Music](#music). Copying it in (rather than referencing the skill folder) is what keeps `vN/`
    re-recordable later, the same reason `record.mjs` is copied per version.
 
 4. **Fit the skeleton to this product.** Everything marked `REPLACE:` is a placeholder that must be
@@ -61,6 +73,7 @@ picked in one line, and build it. Don't block on questions.
 6. **Write `play()`.** Title card → screens → outro. Use captions to name each step, and set
    `CAPTIONS` at the top of the script — the style, and `steps` = how many `say()` calls the run
    makes. Interactions go through the pointer helpers so the viewer can follow what's being clicked.
+   If the zoom answer was yes, wrap the chosen moments in `zoom(sel)` … `zoom()`.
 
 7. **Record.** `node demo/vN/record.mjs` → `demo/vN/out/product-demo.mp4`. Add `--gif` for a
    900px gif. A `demo/vN/music.*` file is picked up automatically; `--music <path>` points at one
@@ -88,7 +101,7 @@ picked in one line, and build it. Don't block on questions.
    head and tail means well under the middle one — that is the fade proving it ran.
 
 9. **Write `demo/vN/README.md`** — scene table with routes, the source-file mapping, duration, the
-   `CAPTIONS` style and music track the version was recorded with, and what the flow
+   `CAPTIONS` style, music track and zoom moments the version was recorded with, and what the flow
    deliberately skips. Update
    `demo/README.md` to list the new version.
 
@@ -106,6 +119,7 @@ Available inside `play()`:
 | `moveTo(sel, ms)` / `click(sel)` | The two halves, when you need state changes between them |
 | `hideCursor()` / `place(x, y, 0)` | Reset the pointer when entering a scene |
 | `say(text, opts?)` / `hush()` | Caption in/out. `{ at: sel }` anchors a `coach` caption; `{ step: n }` forces the index |
+| `zoom(sel, k?, ms?)` / `zoom()` | Push the camera in on an element (default `1.6`×, `900`ms); no target eases back out |
 | `type(el, text, ms)` | Character-by-character typing into a `<span>` |
 | `wait(ms)` | Hold |
 | `reveal(el)` | Auto-called by `moveTo` — smooth-scrolls `.main` so off-fold targets are visible |
@@ -127,6 +141,28 @@ styles ship in the skeleton; `say()` is the same call whichever is on. Pick per 
 `steps` drives the index, the progress track and the rail's dots — count the `say()` calls and set it,
 or the run ends reading `05 / 06`. Unsure which style? Open `index.html` in a browser and switch
 `CAPTIONS.style` — the page replays on `R`, so all four can be compared without recording.
+
+## Zoom
+
+Optional, and off unless the zoom answer asked for it. `zoom(sel)` scales the live scene so `sel`
+sits mid-frame, clamped so the scene's edges never show; `zoom()` eases back to the full frame.
+The pointer, ripple and captions stay full size, and the pointer is carried along with the content
+under it, so `tap()` and `click()` land correctly while zoomed.
+
+```js
+await zoom('#invite-email');        // push in on the field
+await tap('#invite-email');
+await type($('#invite-email'), 'sam@acme.dev');
+await wait(1000);                   // hold so the viewer reads it
+await zoom();                       // back out before the next step
+```
+
+- **Zoom where the frame is too small to read** — a short input, a toggle, a status badge, a
+  generated value. Never on a full-page change; the viewer needs the whole screen for that.
+- **1–3 per video.** A push-in on every click reads as motion sickness, not emphasis.
+- **`k` 1.4–2.** Past 2× the viewer loses where on the page they are.
+- **Hold ≥1s at full zoom**, and `zoom()` out before a target outside the zoomed frame. `scene(n)`
+  resets the camera, so the next screen always opens at full frame.
 
 ## Music
 
@@ -197,6 +233,8 @@ node demo/vN/record.mjs --no-music           # silent even with a sibling track
   it. Never call a scored demo done off the frames alone.
 - **A `coach` caption measures the live element**, so `say(text, { at })` goes *after* `moveTo()` has
   scrolled the target into view — before it, the callout lands on the pre-scroll position.
+  Same with `zoom()`: a coach caption shown before the zoom stays at the old position, so call
+  `say(text, { at })` after it.
 - **`lower-third` owns the lower-left corner** of every frame. Compose scenes around it, or a table's
   first row spends the whole demo behind the caption block.
 
