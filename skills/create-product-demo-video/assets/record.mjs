@@ -125,15 +125,27 @@ rmSync(RAW, { recursive: true, force: true });
 mkdirSync(RAW, { recursive: true });
 
 const browser = await chromium.launch();
+const url = pathToFileURL(join(HERE, 'index.html')).href;
+
+// The frame size is set by FORMAT in index.html — read it off the page rather
+// than keep a second copy here. recordVideo needs it before the context exists.
+const probe = await browser.newPage();
+await probe.goto(url);
+const stage = await probe.evaluate(() => STAGE);
+await probe.close();
+// The window is the output size and fit() scales the stage up into it. Not
+// deviceScaleFactor: recordVideo captures CSS pixels, so a 2× page records at 1×.
+const size = { width: Math.round(stage.w * stage.scale), height: Math.round(stage.h * stage.scale) };
+
 const context = await browser.newContext({
-  viewport: { width: 1280, height: 800 },
+  viewport: size,
   deviceScaleFactor: 1,
-  recordVideo: { dir: RAW, size: { width: 1280, height: 800 } },
+  recordVideo: { dir: RAW, size },
 });
 const page = await context.newPage();
 
-console.log('recording…');
-await page.goto(pathToFileURL(join(HERE, 'index.html')).href + '?record=1');
+console.log(`recording ${size.width}×${size.height}…`);
+await page.goto(url + '?record=1');
 await page.waitForFunction(() => window.__demoDone === true, null, { timeout: 180_000 });
 await page.waitForTimeout(600); // let the last frame settle
 
@@ -166,7 +178,7 @@ if (music) {
   args.push('-i', music);
 }
 
-args.push('-vf', 'fps=30,scale=1280:800:flags=lanczos');
+args.push('-vf', `fps=30,scale=${size.width}:${size.height}:flags=lanczos`);
 
 if (music) {
   const fadeOutStart = Math.max(0, videoDur - FADE_OUT).toFixed(3);
@@ -215,7 +227,7 @@ if (music) {
 if (process.argv.includes('--gif')) {
   const gif = join(OUT, 'product-demo.gif');
   const palette = join(OUT, 'palette.png');
-  const fl = 'fps=15,scale=900:-1:flags=lanczos';
+  const fl = 'fps=15,scale=900:900:force_original_aspect_ratio=decrease:flags=lanczos';
   execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', mp4, '-vf', `${fl},palettegen=stats_mode=diff`, palette], { stdio: 'inherit' });
   execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', mp4, '-an', '-i', palette, '-lavfi', `${fl} [x]; [x][1:v] paletteuse=dither=bayer:bayer_scale=3`, gif], { stdio: 'inherit' });
   rmSync(palette, { force: true });

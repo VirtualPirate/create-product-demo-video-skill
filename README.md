@@ -105,9 +105,9 @@ demo/v1/
 ├─ music.mp3             the bed, copied in so v1 stays re-recordable forever
 ├─ README.md             scene table, which source file each screen came from, what it skips
 └─ out/
-   ├─ product-demo.mp4   1280×800, 30fps, +faststart
+   ├─ product-demo.mp4   at the FORMAT size (1280×800 by default), 30fps, +faststart
    ├─ product-demo.webm  raw silent capture
-   └─ product-demo.gif   with --gif, 900px wide
+   └─ product-demo.gif   with --gif, 900px on the long side
 ```
 
 Each run makes a **new** `demo/vN/` — earlier versions are never overwritten, and `record.mjs` is
@@ -134,6 +134,25 @@ compare all four in a browser without recording anything.
 | `lower-third` | Left block with step index and progress track | Longer flows; most legible in a gif |
 | `rail` | 68px band under the window, chapter dots | Docs and support clips where nothing may be covered |
 | `coach` | Callout anchored to the element in play, rest dimmed | Follow-along walkthroughs |
+
+## Format
+
+Five aspect ratios, set by one constant, `FORMAT`, at the top of the demo's script. The recorder
+reads it off the page, so there is no flag to pass. Before building, the skill asks which one you
+want. It skips the question when your prompt already names a ratio or a target such as YouTube,
+Reels or a square feed post.
+
+| `FORMAT` | mp4 | For |
+|---|---|---|
+| `16:10` *(default)* | 1280×800 | Docs, product pages, changelogs |
+| `16:9` | 1920×1080 | YouTube, slides |
+| `1:1` | 1080×1080 | LinkedIn and X feeds |
+| `4:5` | 1080×1350 | Instagram and LinkedIn portrait posts |
+| `9:16` | 1080×1920 | Reels, Shorts, TikTok |
+
+Narrow formats lay the app out at a narrow width (720px for `9:16`) and scale it up when recording,
+so the UI stays readable on a phone and text stays sharp. At that width the skill transcribes the
+layout your app renders below its breakpoints, not the desktop shell squeezed in.
 
 ## Zoom
 

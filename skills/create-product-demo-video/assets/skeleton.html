@@ -71,7 +71,7 @@ svg { display: block; }
 
 /* ---------------- stage / mock browser ---------------- */
 #stage {
-  position: relative; width: 1280px; height: 800px;
+  position: relative; /* width/height come from FORMAT, set at the top of the script */
   background: var(--card); border-radius: 14px; overflow: hidden;
   box-shadow: 0 40px 80px -30px oklch(22% 0.02 255 / 0.35);
   transform-origin: center center;
@@ -350,7 +350,7 @@ svg { display: block; }
 
 /* ---------------- title / outro ---------------- */
 .card-scene {
-  height: 100%; display: grid; place-content: center; justify-items: center; gap: 20px; text-align: center;
+  height: 100%; display: grid; place-content: center; justify-items: center; gap: 20px; text-align: center; padding: 0 48px;
   background: radial-gradient(1100px 520px at 50% 0%, oklch(56% 0.17 255 / 0.10), transparent 70%), var(--background);
 }
 .card-scene h1 { font-size: 44px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; max-width: 800px; }
@@ -562,8 +562,24 @@ const $ = (s, root = document) => root.querySelector(s);
 const $$ = (s, root = document) => [...root.querySelectorAll(s)];
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// Video frame. '16:10' | '16:9' | '1:1' | '4:5' | '9:16' — see SKILL.md "Format".
+// w×h is the stage in CSS px, the layout the app is transcribed at. record.mjs
+// reads STAGE and opens a window `scale`× bigger, and fit() scales the stage up
+// to fill it — vector, so text stays sharp. The mp4 lands at the size platforms
+// expect while narrow frames keep the UI large enough to read on a phone.
+const FORMAT = '16:10';
+const STAGE = {
+  '16:10': { w: 1280, h: 800, scale: 1 },    // 1280×800  — docs, product pages
+  '16:9':  { w: 1280, h: 720, scale: 1.5 },  // 1920×1080 — YouTube, slides
+  '1:1':   { w: 900, h: 900, scale: 1.2 },   // 1080×1080 — LinkedIn, X feed
+  '4:5':   { w: 864, h: 1080, scale: 1.25 }, // 1080×1350 — Instagram, LinkedIn portrait
+  '9:16':  { w: 720, h: 1280, scale: 1.5 },  // 1080×1920 — Reels, Shorts, TikTok
+}[FORMAT];
+const W = STAGE.w, H = STAGE.h;
+Object.assign($('#stage').style, { width: W + 'px', height: H + 'px' });
+
 function fit() {
-  const s = Math.min(window.innerWidth / 1280, window.innerHeight / 800, 1);
+  const s = Math.min(window.innerWidth / W, window.innerHeight / H);
   $('#stage').style.transform = `scale(${s})`;
 }
 addEventListener('resize', fit);
@@ -704,7 +720,7 @@ function scene(n) {
 
 const cursor = $('#cursor');
 const ripple = $('#ripple');
-let cx = 640, cy = 700;
+let cx = W / 2, cy = H - 100;
 function place(x, y, ms = 900) {
   cx = x; cy = y;
   cursor.style.transitionDuration = ms + 'ms';
@@ -719,8 +735,9 @@ async function reveal(el) {
   const r = el.getBoundingClientRect();
   const m = main.getBoundingClientRect();
   if (r.top > m.top + 80 && r.bottom < m.bottom - 80) return;
+  const f = m.width / main.offsetWidth; // rects are in screen px, scrollTop in stage px
   main.scrollTo({
-    top: main.scrollTop + (r.top - m.top) - m.height / 2 + r.height / 2,
+    top: main.scrollTop + ((r.top - m.top) - m.height / 2 + r.height / 2) / f,
     behavior: 'smooth',
   });
   await wait(750);
@@ -731,7 +748,7 @@ async function moveTo(sel, ms = 900) {
   await reveal(el);
   const vp = $('#viewport').getBoundingClientRect();
   const r = el.getBoundingClientRect();
-  const scale = vp.width / 1280;
+  const scale = vp.width / W;
   cursor.style.opacity = 1;
   place((r.left + r.width / 2 - vp.left) / scale - 2, (r.top + r.height / 2 - vp.top) / scale - 2, ms);
   await wait(ms + 80);
@@ -755,16 +772,16 @@ function hideCursor() { cursor.style.opacity = 0; }
 // with the content under it — same curve as #cursor, so it never slips.
 let cam = { x: 0, y: 0, k: 1 };
 async function zoom(sel, k = 1.6, ms = 900) {
-  const s = $('.scene.on'), W = s.offsetWidth, H = s.offsetHeight;
+  const s = $('.scene.on'), sw = s.offsetWidth, sh = s.offsetHeight;
   let x = 0, y = 0;
   if (sel) {
     const el = typeof sel === 'string' ? $(sel) : sel;
     await reveal(el);
-    const vp = $('#viewport').getBoundingClientRect(), r = el.getBoundingClientRect(), f = vp.width / 1280;
+    const vp = $('#viewport').getBoundingClientRect(), r = el.getBoundingClientRect(), f = vp.width / W;
     const ex = ((r.left + r.width / 2 - vp.left) / f - cam.x) / cam.k;
     const ey = ((r.top + r.height / 2 - vp.top) / f - cam.y) / cam.k;
-    x = Math.min(0, Math.max(W - W * k, W / 2 - ex * k));
-    y = Math.min(0, Math.max(H - H * k, H / 2 - ey * k));
+    x = Math.min(0, Math.max(sw - sw * k, sw / 2 - ex * k));
+    y = Math.min(0, Math.max(sh - sh * k, sh / 2 - ey * k));
   } else k = 1;
   if (+cursor.style.opacity) place(x + (cx + 2 - cam.x) / cam.k * k - 2, y + (cy + 2 - cam.y) / cam.k * k - 2, ms);
   s.style.transformOrigin = '0 0';
@@ -849,17 +866,18 @@ function hush() {
 
 // Measures the live element, so call it AFTER moveTo() has scrolled the target in.
 function coachAt(el, text, idx) {
-  const v = $('#viewport').getBoundingClientRect();
-  const r = el.getBoundingClientRect();
-  const x = r.left - v.left, y = r.top - v.top, pad = 6;
+  const v = $('#viewport').getBoundingClientRect(), f = v.width / W; // screen px → stage px
+  const b = el.getBoundingClientRect();
+  const r = { width: b.width / f, height: b.height / f };
+  const x = (b.left - v.left) / f, y = (b.top - v.top) / f, pad = 6;
   CAP.ring.style.cssText =
     `left:${x - pad}px;top:${y - pad}px;width:${r.width + pad * 2}px;height:${r.height + pad * 2}px`;
 
   $('.step', CAP.coach).textContent = `Step ${idx}`;
   $('.t', CAP.coach).textContent = text;
   const cw = CAP.coach.offsetWidth, ch = CAP.coach.offsetHeight;
-  const below = y + r.height + 16 + ch < v.height - 16;
-  const left = Math.max(24, Math.min(x + r.width > 640 ? x + r.width - cw : x, 1280 - cw - 24));
+  const below = y + r.height + 16 + ch < v.height / f - 16;
+  const left = Math.max(24, Math.min(x + r.width > W / 2 ? x + r.width - cw : x, W - cw - 24));
   CAP.coach.classList.toggle('below', below);
   CAP.coach.classList.toggle('above', !below);
   CAP.coach.style.left = left + 'px';
@@ -885,7 +903,7 @@ async function play() {
   await wait(2800);
 
   scene(1);
-  hideCursor(); place(640, 720, 0);
+  hideCursor(); place(W / 2, H - 80, 0);
   await wait(600);
   say('REPLACE: what this step is');
   await wait(1000);
