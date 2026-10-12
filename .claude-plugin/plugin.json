@@ -1,7 +1,7 @@
 {
   "name": "create-product-demo-video",
-  "version": "1.0.0",
-  "description": "Records a product demo video of a real user flow in whatever web app your repo contains. Claude reads the actual routes, components and design tokens, transcribes them into a self-playing HTML demo, and records it to mp4 (or gif) with Playwright + ffmpeg, optionally over a normalized music bed. Ships four caption styles, a 1280x800 mock-browser skeleton, and a recorder that asserts the audio mux instead of trusting it.",
+  "version": "1.1.0",
+  "description": "Records a product demo video of a real user flow in whatever web app your repo contains. Claude reads the actual routes, components and design tokens, transcribes them into a self-playing HTML demo, and records it to mp4 (or gif) with Playwright + ffmpeg, optionally over a normalized music bed. Ships four caption styles, a mock-browser skeleton in five aspect ratios (16:10, 16:9, 1:1, 4:5, 9:16), a camera zoom, and a recorder that asserts the audio mux instead of trusting it.",
   "author": {
     "name": "VirtualPirate",
     "url": "https://github.com/VirtualPirate"
