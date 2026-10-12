@@ -145,7 +145,9 @@ when your prompt already asks for zoom or says no zoom. In `play()`, `zoom('#sel
 ## Music
 
 Optional and off unless a track is there — Playwright captures no audio at all, so the bed is muxed
-in at encode time and never touches the demo page.
+in at encode time and never touches the demo page. Before building, the skill asks which bundled
+track to use or **No music**. It skips the question when your prompt already names a track or file,
+or says no music.
 
 Two beds ship in `assets/music/`. Every track is driven to −18 LUFS with a −1.5 dB true-peak ceiling,
 so swapping beds between versions needs no hand-tuning, and fades (1.5s in, 2.5s out) are timed off
